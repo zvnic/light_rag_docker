@@ -1,0 +1,80 @@
+services:
+  lightrag:
+    image: ghcr.io/hkuds/lightrag:latest
+    container_name: lightrag
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      TZ: ${TZ}
+      PORT: "${PORT}"
+
+      # RAG
+      CHUNK_SIZE: "${CHUNK_SIZE}"
+      CHUNK_OVERLAP_SIZE: "${CHUNK_OVERLAP_SIZE}"
+      USE_LLM_FALLBACK: "${USE_LLM_FALLBACK}"
+      MAX_ASYNC_LLM: "${MAX_ASYNC_LLM}"
+
+      # Embeddings (Polza)
+      EMBEDDING_BINDING: "${EMBEDDING_BINDING}"
+      EMBEDDING_MODEL: "${EMBEDDING_MODEL}"
+      EMBEDDING_BINDING_HOST: "${EMBEDDING_BINDING_HOST}"
+      EMBEDDING_DIM: "${EMBEDDING_DIM}"
+
+      # LLM (Polza OpenAI API)
+      LLM_BINDING: "${LLM_BINDING}"
+      LLM_MODEL: "${LLM_MODEL}"
+      OPENAI_BASE_URL: "${OPENAI_BASE_URL}"
+      LLM_BINDING_HOST: "${LLM_BINDING_HOST}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+
+      # Workspace
+      WORKSPACE: "${WORKSPACE}"
+
+      # Русский и rerank
+      SUMMARY_LANGUAGE: "${SUMMARY_LANGUAGE}"
+      ENABLE_RERANK: "${ENABLE_RERANK}"
+      # RERANK_BINDING: "${RERANK_BINDING}"
+      # RERANK_MODEL: "${RERANK_MODEL}"
+      # MIN_RERANK_SCORE: "${MIN_RERANK_SCORE}"
+
+      # API Key Header auth
+      API_KEY_HEADER: "${API_KEY_HEADER}"
+      LIGHTRAG_API_KEY: "${LIGHTRAG_API_KEY}"
+
+      # WebUI Basic Auth (optional)
+      AUTH_ACCOUNTS: "${AUTH_ACCOUNTS}"
+      TOKEN_SECRET: "${TOKEN_SECRET}"
+      TOKEN_EXPIRE_HOURS: "${TOKEN_EXPIRE_HOURS}"
+
+      # Ollama timeouts (optional)
+      OLLAMA_TIMEOUT_SECONDS: "${OLLAMA_TIMEOUT_SECONDS}"
+      OLLAMA_RETRIES: "${OLLAMA_RETRIES}"
+
+    ports:
+      - "${PORT}:8989"
+
+    volumes:
+      - /opt/lightrag/data:/app/data
+      - /opt/lightrag/logs:/app/logs
+      - ./.env:/app/.env:ro
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    networks:
+      - rag-net
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8989/health >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+
+networks:
+  rag-net:
+    external: true
